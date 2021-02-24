@@ -132,25 +132,27 @@ def main():
     consumer.setDaemon=True
     consumer.start()
 
-    while True:
+    folderName = ['test', 'test2']
+
+    for name in folderName:
         poolProducer = mp.Pool(processes=3)
-        folderName = input(f'Enter folder name (only in path report!!)> ')
+        # folderName = input(f'Enter folder name (only in path report!!)> ')
         #### set report ocr path
-        path = '../KMUTT-Archives-Management-Django/KMUTTArchivesManagement/document-report/' +folderName
+        path = '../KMUTT-Archives-Management-Django/KMUTTArchivesManagement/document-report/' +name
         listPathFileNames = listDirectory(path)
         #### set path & create to save clean text
-        pathFolder = pathCleanFileFolder + '/' + folderName
+        pathFolder = pathCleanFileFolder + '/' + name
         createDirectory(pathFolder)
         if not listPathFileNames:
             logging.info("Error: listPathFileNames return False")
             return
         for pathFileName in listPathFileNames:
-            poolProducer.apply_async(pipeLineProducer, args=(pathFileName, queueWriteFile, pathFolder, folderName ))
+            poolProducer.apply_async(pipeLineProducer, args=(pathFileName, queueWriteFile, pathFolder, name ))
         poolProducer.close()
         poolProducer.join()
         while True:
             if queueWork.empty():
-                logging.info('FolderName: ' + str(folderName)+ '  Finish')
+                logging.info('FolderName: ' + str(name)+ '  Finish')
                 break
 
 if __name__ == '__main__':
