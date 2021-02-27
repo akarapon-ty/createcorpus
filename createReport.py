@@ -76,7 +76,7 @@ def pipeLineOcr(pathImage, pathFolderImg, page, folderName):
     image = cv2.imread(pathImage)
     docPath = pathFolderImg + '/' + 'page-' + str(page) +'.docx'
     # mydoc = Doc.createDoc(docPath)
-    logging.info("FileName: " + str(folderName)+ " Page: "+str(page)+ " Start process")
+    logging.info("FileName: " + str(folderName)+ " Page: "+str(page)+ " Start image process")
     arrayText = []
     arrayImage = []
     arrayCleanText = []
@@ -153,10 +153,12 @@ def main():
     pathFolderImg = reportPath + '/' + imageName
     createDirectory(reportPath)
     createDirectory(pathFolderImg)
+    logging.info("FileName: " + str(imageName) + "Start process")
     for inx, path in enumerate(listPathImage):
         pool.apply_async(pipeLineOcr, args=(path, pathFolderImg, str(inx+1), imageName, ))
     pool.close()
     pool.join()
+    logging.info("FileName: " + str(imageName) + "Finish process")
 
 
 if __name__ == '__main__':
