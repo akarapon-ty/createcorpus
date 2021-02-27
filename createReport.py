@@ -6,6 +6,7 @@ import cv2
 import logging
 import tensorflow as tf
 import numpy as np
+import re
 
 import imageProcessing as Imp
 import pdf2Image as PI
@@ -155,7 +156,8 @@ def main():
     createDirectory(pathFolderImg)
     logging.info("FileName: " + str(imageName) + "Start process")
     for inx, path in enumerate(listPathImage):
-        pool.apply_async(pipeLineOcr, args=(path, pathFolderImg, str(inx+1), imageName, ))
+        pageNumber = re.search('page(.*).jpg', path).group(1)
+        pool.apply_async(pipeLineOcr, args=(path, pathFolderImg, pageNumber, imageName, ))
     pool.close()
     pool.join()
     logging.info("FileName: " + str(imageName) + "Finish process")

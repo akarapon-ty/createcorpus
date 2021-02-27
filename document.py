@@ -19,11 +19,6 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%d-%m-%y %H:%M',
                     filename='./processLog.log',
                     filemode='a')
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-formatter = logging.Formatter('%(processName)-12s: %(message)s')
-console.setFormatter(formatter)
-logging.getLogger('').addHandler(console)
 ########################
 
 
