@@ -9,19 +9,6 @@ import tensorflow as tf
 # from another file
 import tokenizer
 
-# tf.get_logger().setLevel('ERROR')
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-# physical_devices = tf.config.list_physical_devices('GPU')
-# try:
-#   # Disable all GPUS
-#   tf.config.set_visible_devices([], 'GPU')
-#   visible_devices = tf.config.get_visible_devices()
-#   for device in visible_devices:
-#     assert device.device_type != 'GPU'
-# except:
-#   # Invalid device or cannot modify virtual devices once initialized.
-#   pass
-
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)-12s %(processName)-8s %(message)s',
                     datefmt='%d-%m-%y %H:%M',

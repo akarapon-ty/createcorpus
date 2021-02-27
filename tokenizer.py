@@ -59,7 +59,6 @@ def cleanWord(sentence):
     tokens = deepcut(sentence)
     # clean token
     tokens = list(map(removeSpaceLatin, tokens))
-    tokens = list(map(removeSpaceLatin, tokens))
     while("" in tokens): 
         tokens.remove("") 
     tokens = list(map(to_lower_case, tokens))

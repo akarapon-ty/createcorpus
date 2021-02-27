@@ -9,6 +9,13 @@ pythainlp = "*"
 deepcut = "*"
 pyspellchecker = "*"
 nltk = "*"
+opencv-python = "*"
+numpy = "==1.19.3"
+shapely = "*"
+pytesseract = "*"
+pdf2image = "*"
+scipy = "*"
+python-docx = "*"
 
 [dev-packages]
 
