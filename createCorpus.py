@@ -132,13 +132,13 @@ def main():
     consumer.setDaemon=True
     consumer.start()
 
-    folderName = ['test', 'test2']
+    folderName = ['1614071120647','1614072472925','1614072568476']
 
     for name in folderName:
-        poolProducer = mp.Pool(processes=3)
+        poolProducer = mp.Pool(processes=5)
         # folderName = input(f'Enter folder name (only in path report!!)> ')
         #### set report ocr path
-        path = '../KMUTT-Archives-Management-Django/KMUTTArchivesManagement/document-report/' +name
+        path = '../document-report2/' +name
         listPathFileNames = listDirectory(path)
         #### set path & create to save clean text
         pathFolder = pathCleanFileFolder + '/' + name

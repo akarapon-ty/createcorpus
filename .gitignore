@@ -1,0 +1,5 @@
+/cleanOCR
+/__pycache__
+/.vscode
+processLog.log
+corpus.txt
