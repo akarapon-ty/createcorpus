@@ -87,8 +87,8 @@ def addReportDoc(arrayPicture, arrayText, arrayCleanText, path):
         addReportDocPicture(arrayPicture[inx], doc)
         addReportDocText(arrayText[inx], doc)
         doc.add_paragraph('Clean text:')
-        for text in arrayCleanText[inx]:
-            addReportDocText(text, doc, True)
+        # for text in arrayCleanText[inx]:
+        addReportDocText(arrayCleanText[inx], doc, True)
     doc.save(path)
 
 

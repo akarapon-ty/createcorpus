@@ -5,6 +5,8 @@ import pytesseract
 from pytesseract import Output
 from matplotlib import pyplot as plt
 
+import document as Doc
+import pdf2Image as P2i
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 def histogram(gray):
@@ -65,22 +67,56 @@ def sortTextOCR(externalBox, widthImage):
         externalBox, key=lambda ctr: ctr[0] + ctr[1] * widthImage)
     return sortCnt
 
+
+def tesseractOcr(picture):
+    # imageOCR = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
+    custom_config = r'--oem 1'
+    config = custom_config
+    # textconfident = pytesseract.image_to_data(
+    # imageOCR, lang = 'tha+eng', output_type = Output.DICT, config = custom_config)
+    # textcon = CalculateTextConfident(textconfident)
+    text = pytesseract.image_to_string(
+        picture, lang='tha+eng', config=custom_config)
+    # for add context docx to check error
+    cleanText = Doc.cleanTextRegex(text)
+    if cleanText:
+        return cleanText
+    return "NONONO"
+
+def repairImage(picture):
+    kernalRepair = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+    return cv2.morphologyEx(picture, cv2.MORPH_ERODE, kernalRepair, iterations=1)
+
 def main():
-    image = cv2.imread('../CreateCorpus/documents-image/kati40/page4.jpg')
-    imageText = removeBG(image)
-    kernalDilate = cv2.getStructuringElement(cv2.MORPH_RECT,(13,5))
-    dilate = cv2.morphologyEx(imageText, cv2.MORPH_OPEN, kernalDilate, iterations=3)
+    # path = P2i.convertPdftoJpg('./documents-pdf/kati56.pdf','kati56')
+    image = cv2.imread('./documents-image/kati54/page22.jpg')
+    imageText = removeBG(image)    
+    kernalDilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(13,5))
+    dilate = cv2.morphologyEx(imageText, cv2.MORPH_CLOSE, kernalDilate, iterations=3)
     cnts = findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     boundaryBox = []
     for cnt in cnts:
         boundaryBox.append(cv2.boundingRect(cnt))
-    # sortCnts = sortTextOCR(boundaryBox, image.shape[1])
-    resize('before', imageText)
-    for inx, box in enumerate(boundaryBox):
+
+    sortCnts = sortTextOCR(boundaryBox, image.shape[1])
+    resize('before', dilate)
+    imageText = cv2.bitwise_not(imageText)
+    imageRepair = repairImage(imageText)
+    arrayPicture = []
+    arrayText = []
+    arrayText2 = []
+
+    for inx, box in enumerate(sortCnts):
         x,y,w,h = box
-        cropToOCR = dilate[y:y+h, x:x+w].copy()
-        resize('test', cropToOCR)
+        repairOCR = imageRepair[y:y+h, x:x+w].copy()
+        cropToOCR = imageText[y:y+h, x:x+w].copy()
+        image = cv2.rectangle(image, (x,y), (x+w,y+h), (0,255,0),2)        
+        arrayPicture.append(cropToOCR)
+        arrayText.append(tesseractOcr(cropToOCR))
+        arrayText2.append(tesseractOcr(repairOCR))
         cv2.destroyAllWindows()
+
+    Doc.addReportDoc(arrayPicture, arrayText,arrayText2,'./docRep4.docx')
 
 if __name__ == '__main__':
     try:
