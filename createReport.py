@@ -4,7 +4,7 @@ import pytesseract
 from pytesseract import Output
 import cv2
 import logging
-import tensorflow as tf
+# import tensorflow as tf
 import numpy as np
 import re
 
@@ -12,7 +12,8 @@ import imageProcessing as Imp
 import pdf2Image as PI
 import document as Doc
 import tokenizer
- 
+font = cv2.FONT_HERSHEY_SIMPLEX 
+
     ### Plan
     # 1. select to convert PDF or use pic
     # 2. list directory open mp
@@ -75,14 +76,14 @@ def tesseractOcr(picture):
 
 def pipeLineOcr(pathImage, pathFolderImg, page, folderName):
     image = cv2.imread(pathImage)
-    docPath = pathFolderImg + '/' + 'page-' + str(page) +'.docx'
-    # mydoc = Doc.createDoc(docPath)
     logging.info("FileName: " + str(folderName)+ " Page: "+str(page)+ " Start image process")
     arrayText = []
     arrayImage = []
     arrayCleanText = []
     skipPage = Imp.skipPage(image)
     if skipPage:
+        cv2.putText(image,"SKIP", (x,y), 0,font, 2, 255)
+        cv2.imwrite('./readpic/'+ str(folderName) +'/'+str(page)+'.jpg', image)
         return
 
     imageOnlyText, angleBox, externalBox = Imp.prepareRotated(image)
@@ -92,55 +93,24 @@ def pipeLineOcr(pathImage, pathFolderImg, page, folderName):
     del imageOnlyText
     del externalBox
     del skipPage
-    del image
 
-    gpus = tf.config.list_physical_devices('GPU')
-    if gpus:
-        try:
-            # Currently, memory growth needs to be the same across GPUs
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-                logical_gpus = tf.config.experimental.list_logical_devices(
-                    'GPU')
-                print(len(gpus), "Physical GPUs,", len(
-                    logical_gpus), "Logical GPUs")
-        except RuntimeError as e:
-            # Memory growth must be set before GPUs have been initialized
-            print(e)
+   
 
     for inx, box in enumerate(sortExternalBox):
         cleanSentence = []
         imageRotated = Imp.rotated(imageRemoveLine, angleBox, inx, box)
-        text = tesseractOcr(imageRotated)
-        if text != '<EMP>':
-            cleanSentence = tokenizer.cleanWord(text)
-            cleanSentence = list(map(tokenizer.spellCheckAuto, cleanSentence))
-            tempArray = cleanSentence.copy()
-            if len(tempArray) >= 1:
-                arrayCleanText.append(tempArray)
-            else:
-                arrayCleanText.append('<EMP>')
-            del tempArray
-        else:
-            arrayCleanText.append('<EMP>')
-        # img = Doc.saveTempImg(imageRotated)
-        ### tesseract already send token if empty word
-        # arrayImage.append(img)
-        arrayImage.append(imageRotated)
-        arrayText.append(text)
-
+        x,y,w,h = box
+        image = cv2.rectangle(image, (x,y), (x+w,y+h), (255,0,0),2)
+    cv2.imwrite('./readpic/'+ str(folderName) +'/'+str(page)+'.jpg', image)
     ### clean memory
     del sortExternalBox
     del imageRemoveLine
 
-    Doc.addReportDoc(arrayImage, arrayText, arrayCleanText, docPath)
     logging.info("FileName: " + str(folderName)+ " Page: "+str(page)+ " Finish add report")
     return
 
 def main():
-    pool = mp.Pool(processes=4)
-    createDirectory(PDF_FOLDERPATH)
-    createDirectory(IMAGE_FOLDERPATH)
+    pool = mp.Pool(processes=5)
     convertImg = input(f'you want to convert PDF to img (y/n)> ')
     if convertImg == 'y':
         pathImage, imageName = convertPdf()
@@ -150,14 +120,14 @@ def main():
     listPathImage = listDirectory(pathImage)
     if not listPathImage:
         return
-    reportPath = './report'
+    reportPath = './readpic'
     pathFolderImg = reportPath + '/' + imageName
     createDirectory(reportPath)
     createDirectory(pathFolderImg)
     logging.info("FileName: " + str(imageName) + "Start process")
     for inx, path in enumerate(listPathImage):
         pageNumber = re.search('page(.*).jpg', path).group(1)
-        pool.apply_async(pipeLineOcr, args=(path, pathFolderImg, pageNumber, imageName, ))
+        pool.apply(pipeLineOcr, args=(path, pathFolderImg, pageNumber, imageName, ))
     pool.close()
     pool.join()
     logging.info("FileName: " + str(imageName) + "Finish process")

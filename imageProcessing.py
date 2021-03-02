@@ -194,7 +194,7 @@ def prepareRotated(picture):
                 if vali:
                     angleSingle = findAngle(textBox[1][0],textBox[2][0],textBox[1][1],textBox[2][1])
                     angle.append(angleSingle)
-                    cv2.arrowedLine(picture,(textBox[1][0],textBox[2][0]),(textBox[1][1],textBox[2][1]),(0,255,0),2)
+
                 if len(internalText)-1 == indexText:
                     if(len(angle) != 0):
                         avgAngle = findAverageAngle(angle)
