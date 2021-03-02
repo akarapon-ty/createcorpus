@@ -1,122 +1,84 @@
 import cv2
 import os,sys
 import numpy as np
+from multiprocessing import Pool
 import pytesseract
 from pytesseract import Output
-from matplotlib import pyplot as plt
+import logging
+import re
 
-import document as Doc
+# import ocr.pdf2Image as P2i
+# import ocr.document as Doc
+# import ocr.imageProcessing as Imp
+
 import pdf2Image as P2i
+import document as Doc
+import imageProcessing as Imp
+
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
-def histogram(gray):
-    hist = cv2.calcHist([gray],[0],None,[256],[0,256])
-    plt.plot(hist, color='k')
-    plt.xlim([0, 256])
-    plt.show()
-
-def countHistogram(gray):
-    (unique, counts) = np.unique(gray, return_counts=True)
-    print(np.asarray((unique, counts)))
-
-def findContours(picture, parameterRETR,parameterChain):
-    cnts = cv2.findContours(picture, parameterRETR, parameterChain)
-    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-    return cnts
-
-def removeBG(picture):
-    gray = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
-    # apply morphology
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT , (5,5))
-    morph = cv2.morphologyEx(gray, cv2.MORPH_DILATE, kernel)
-    # divide gray by morphology image
-    division = cv2.divide(gray, morph, scale=255)
-    # threshold
-    return cv2.threshold(division, 0, 255, cv2.THRESH_OTSU +  cv2.THRESH_BINARY_INV )[1]
-
-def removeLine(picture):
-    # set kernel for remove horizontal line & vertical line
-    horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25,1))
-    detected_lines = cv2.morphologyEx(picture, cv2.MORPH_OPEN, horizontal_kernel, iterations=2)
-    vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1,25))
-    detected_lines2 = cv2.morphologyEx(picture, cv2.MORPH_OPEN, vertical_kernel, iterations=3)
-
-    #find contours & remove line with white color 
-    cntsHorizontal = findContours(detected_lines, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cntsVertical = findContours(detected_lines2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    for c in cntsHorizontal:
-        cv2.drawContours(picture, [c], -1, (255,255,255), -1)
-    for c in cntsVertical:
-        cv2.drawContours(picture, [c], -1, (255,255,255), -1)
-    return picture 
-
-def resize(name,picture):
-    #resize 
-    scale_percent = 40
-    width = int(picture.shape[1] * scale_percent / 100)
-    height = int(picture.shape[0] * scale_percent / 100)
-    #dsize
-    dsize = (width, height)
-    if width != 0 and height != 0: 
-        pictureResize = cv2.resize(picture, dsize)
-        cv2.imshow(name,pictureResize)
-        cv2.waitKey() 
+ROOT = os.path.abspath(os.getcwd())
+PATH_REPORT = os.path.join(ROOT, 'document-report')
 
 def sortTextOCR(externalBox, widthImage):
     sortCnt = sorted(
         externalBox, key=lambda ctr: ctr[0] + ctr[1] * widthImage)
     return sortCnt
 
+def listDirectory(path):
+    listDir = False
+    try:
+        listDir = [os.path.join(path,f) for f in os.listdir(path) if f.endswith(".jpg")]
+    except OSError:
+        print("Error: path Error maybe wrong name!!!!")
+    return listDir
 
 def tesseractOcr(picture):
-    # imageOCR = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
     custom_config = r'--oem 1'
     config = custom_config
-    # textconfident = pytesseract.image_to_data(
-    # imageOCR, lang = 'tha+eng', output_type = Output.DICT, config = custom_config)
-    # textcon = CalculateTextConfident(textconfident)
     text = pytesseract.image_to_string(
         picture, lang='tha+eng', config=custom_config)
     # for add context docx to check error
     cleanText = Doc.cleanTextRegex(text)
     if cleanText:
         return cleanText
-    return "NONONO"
+    return False
 
-def repairImage(picture):
-    kernalRepair = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
-    return cv2.morphologyEx(picture, cv2.MORPH_ERODE, kernalRepair, iterations=1)
-
-def main():
-    # path = P2i.convertPdftoJpg('./documents-pdf/kati56.pdf','kati56')
-    image = cv2.imread('./documents-image/kati54/page22.jpg')
-    imageText = removeBG(image)    
-    kernalDilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(13,5))
-    dilate = cv2.morphologyEx(imageText, cv2.MORPH_CLOSE, kernalDilate, iterations=3)
-    cnts = findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+def pipelineOCR(image, page, fileName):
+    imageText = Imp.removeBG(image)
+    cnts = Imp.findContours(imageText)
     boundaryBox = []
     for cnt in cnts:
         boundaryBox.append(cv2.boundingRect(cnt))
-
     sortCnts = sortTextOCR(boundaryBox, image.shape[1])
-    resize('before', dilate)
     imageText = cv2.bitwise_not(imageText)
-    imageRepair = repairImage(imageText)
-    arrayPicture = []
-    arrayText = []
-    arrayText2 = []
-
+    # imageRepair = repairImage(imageText)
+    fulltext = ''
     for inx, box in enumerate(sortCnts):
         x,y,w,h = box
-        repairOCR = imageRepair[y:y+h, x:x+w].copy()
+        # repairOCR = imageRepair[y:y+h, x:x+w].copy()
         cropToOCR = imageText[y:y+h, x:x+w].copy()
-        image = cv2.rectangle(image, (x,y), (x+w,y+h), (0,255,0),2)        
-        arrayPicture.append(cropToOCR)
-        arrayText.append(tesseractOcr(cropToOCR))
-        arrayText2.append(tesseractOcr(repairOCR))
-        cv2.destroyAllWindows()
+        text = tesseractOcr(cropToOCR)
+        if text:
+            fulltext = fulltext + " " + text
+    print('finish: ', page)
+    Doc.addReportText(fulltext, page, fileName)
 
-    Doc.addReportDoc(arrayPicture, arrayText,arrayText2,'./docRep4.docx')
+def main():
+    startPage = 1
+    filename = "kati55test"
+    name= "./documents-pdf/kati55.pdf"
+    page = int(startPage)
+    path = P2i.convertPdftoJpg(name,filename,page)
+    Doc.createDirectory(PATH_REPORT)
+    Doc.createDirectory(PATH_REPORT+"/"+filename)
+    poolOCR = Pool(processes=4)
+    listPathImage = listDirectory(path)
+    for pathImage in listPathImage:
+        pageNumber = re.search('page(.*).jpg', pathImage).group(1)
+        image = cv2.imread(pathImage)
+        poolOCR.apply_async(pipelineOCR, args=(image, pageNumber, filename, ))
+    poolOCR.close()
+    poolOCR.join()
 
 if __name__ == '__main__':
     try:

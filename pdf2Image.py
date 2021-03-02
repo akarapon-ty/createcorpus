@@ -6,7 +6,6 @@ from pdf2image import convert_from_path
 
 ROOT = os.path.abspath(os.getcwd())
 
-
 def convertPdftoJpg(pathName, pdfName, startPage=1):
     # define the name of the directory to be created
     path = ROOT + "/documents-image/" + pdfName

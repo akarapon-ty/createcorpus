@@ -1,8 +1,11 @@
 /cleanocr
 /documents-pdf
+/document-pdf
+/document-report
 /documents-image
+/document-image
 /report
 corpus.txt
-/__pycache__
-/.vscode
+__pycache__
+.vscode
 /readpic
