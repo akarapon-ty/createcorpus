@@ -19,6 +19,14 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 ROOT = os.path.abspath(os.getcwd())
 PATH_REPORT = os.path.join(ROOT, 'document-report')
 
+# func rotate
+TEXT_MIN_WIDTH = 15      # min reduced px width of detected text contour
+TEXT_MIN_HEIGHT = 2      # min reduced px height of detected text contour
+TEXT_MIN_ASPECT = 1.5    # filter out text contours below this w/h ratio
+TEXT_MAX_THICKNESS = 10  # max reduced px thickness of detected text contour
+TEXT_MAX_HEIGHT = 100 
+########################
+
 def sortTextOCR(externalBox, widthImage):
     sortCnt = sorted(
         externalBox, key=lambda ctr: ctr[0] + ctr[1] * widthImage)
@@ -55,12 +63,13 @@ def pipelineOCR(image, page, fileName):
     fulltext = ''
     for inx, box in enumerate(sortCnts):
         x,y,w,h = box
+        if h < TEXT_MIN_HEIGHT or w < TEXT_MIN_WIDTH:
+            pass
         # repairOCR = imageRepair[y:y+h, x:x+w].copy()
         cropToOCR = imageText[y:y+h, x:x+w].copy()
         text = tesseractOcr(cropToOCR)
         if text:
             fulltext = fulltext + " " + text
-    print('finish: ', page)
     Doc.addReportText(fulltext, page, fileName)
 
 def main():
