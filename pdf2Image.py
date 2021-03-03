@@ -1,5 +1,6 @@
 import os
 from pdf2image import convert_from_path
+import re
 
 # poppler
 # pdf2image
@@ -8,7 +9,8 @@ ROOT = os.path.abspath(os.getcwd())
 
 def convertPdftoJpg(pathName, pdfName, startPage=1):
     # define the name of the directory to be created
-    path = ROOT + "/documents-image/" + pdfName
+    name = re.search('(.*).pdf', pdfName).group(1)
+    path = ROOT + "/documents-image/" + name
     try:
         os.mkdir(path)
         print("Successfully created the directory %s" % path)

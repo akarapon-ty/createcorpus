@@ -97,6 +97,16 @@ def addReportText(fullText, page, fileName):
     with open(PATH_REPORT+"/"+fileName+"/"+fileName+"page-"+str(page)+".txt", 'w', encoding='utf8') as f:
         f.write(fullText)
 
+def writeFile(path, fullText):
+    with open(path, "a", encoding='utf8') as f:
+        for text in fullText:
+            f.write(text)
+
+def createFileCorpus(path):
+    try:
+        open(path, "x")
+    except OSError:
+        logging.info("Already Have Corpus file to update")
 
 def cleanTextRegex(fullText):
     # remove anything except TH/EN alphabet, digit, '/'
@@ -104,6 +114,7 @@ def cleanTextRegex(fullText):
     word = word.decode('utf8')
     text = fullText.replace(word, "")
     text = REGEX.sub('', text)
+    text = re.sub(r'\s', '', text)
     if text:
         return text
     return False
