@@ -114,7 +114,7 @@ def cleanTextRegex(fullText):
     word = word.decode('utf8')
     text = fullText.replace(word, "")
     text = REGEX.sub('', text)
-    text = re.sub(r'\s', '', text)
+    # text = re.sub(r'\s', '', text)
     if text:
         return text
     return False

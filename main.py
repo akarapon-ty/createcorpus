@@ -138,7 +138,7 @@ def main():
     #######
 
     Doc.createFileCorpus(pathCorpusFile)
-    pathPDF = "F:\Ty\project kmutt\\test"
+    pathPDF = "D:\word2vec\createcorpus\documents-pdf"
     listFilePDF = listDirectory(pathPDF)
     for pdfName in listFilePDF:
         page = int(startPage)
