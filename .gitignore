@@ -4,6 +4,7 @@
 /document-report
 /documents-image
 /document-image
+/document-ocr
 /report
 corpus.txt
 __pycache__

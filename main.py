@@ -21,6 +21,7 @@ import tokenizer as token
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 ROOT = os.path.abspath(os.getcwd())
 PATH_REPORT = os.path.join(ROOT, 'document-report')
+PATH_REPORT2 = os.path.join(ROOT, 'document-ocr')
 
 # func rotate
 TEXT_MIN_WIDTH = 15      # min reduced px width of detected text contour
@@ -103,8 +104,11 @@ def pipelineOCR(image, page, fileName, queueWriteFile):
     # imageRepair = repairImage(imageText)
     fullTextClean = []
     pathSaveClean = PATH_REPORT+"/"+fileName+"/"+"page-"+str(page)+".txt"
+    pathSaveClean2 = PATH_REPORT2+"/"+fileName+"/"+"page-"+str(page)+".txt"
     Doc.createFileCorpus(pathSaveClean)
+    Doc.createFileCorpus(pathSaveClean2)
     logging.info("FileName: " + str(fileName)+ " Page: "+str(page)+ " Start OCR")
+    fulltext = ''
     for inx, box in enumerate(sortCnts):
         x,y,w,h = box
         if h < TEXT_MIN_HEIGHT or w < TEXT_MIN_WIDTH:
@@ -113,12 +117,16 @@ def pipelineOCR(image, page, fileName, queueWriteFile):
         cropToOCR = imageText[y:y+h, x:x+w].copy()
         text = tesseractOcr(cropToOCR)
         if text:
-            cleanSentence = token.cleanWord(text)
-            cleanSentence = list(map(token.spellCheckAuto, cleanSentence))
-            fullTextClean.extend(cleanSentence)
-            if len(cleanSentence) > 1:
-                cleanSentence.append('\n')
-                Doc.writeFile(pathSaveClean, cleanSentence)
+            fulltext = fulltext + " " + text
+    Doc.writeFile(pathSaveClean2, fulltext)
+    arrayText = fulltext.split(' ')
+    for sentence in arrayText:
+        cleanSentence = token.cleanWord(sentence)
+        cleanSentence = list(map(token.spellCheckAuto, cleanSentence))
+        fullTextClean.extend(cleanSentence)
+        if len(cleanSentence) > 1:
+            cleanSentence.append('\n')
+            Doc.writeFile(pathSaveClean, cleanSentence)
     logging.info("FileName: " + str(fileName)+ " Page: "+str(page)+ " Finish OCR")
     queueWriteFile.put(fullTextClean)
 
@@ -138,6 +146,7 @@ def main():
     #######
 
     Doc.createFileCorpus(pathCorpusFile)
+    Doc.createDirectory(PATH_REPORT2)
     pathPDF = "F:\Ty\project kmutt\\test"
     listFilePDF = listDirectory(pathPDF)
     for pdfName in listFilePDF:
@@ -149,6 +158,7 @@ def main():
         poolOCR = Pool(processes=4)
         listPathImage = listDirectory(path)
         Doc.createDirectory(PATH_REPORT+"/"+re.search('(.*).pdf', filename).group(1))
+        Doc.createDirectory(PATH_REPORT2+"/"+re.search('(.*).pdf', filename).group(1))
         for ImageName in listPathImage:
             pathImage = path + '/' +ImageName
             pageNumber = re.search('page(.*).jpg', pathImage).group(1)
@@ -158,7 +168,7 @@ def main():
         poolOCR.join()
         while True:
             if queueWork.empty():
-                logging.info('FolderName: ' + str(name)+ '  Finish')
+                logging.info('FolderName: ' + str(filename)+ '  Finish')
                 break
 
 if __name__ == '__main__':
