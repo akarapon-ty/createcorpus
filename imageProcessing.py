@@ -4,10 +4,10 @@ import cv2
 from matplotlib import pyplot as plt
 
 def histogram(gray):
+    plt.figure()
     hist = cv2.calcHist([gray],[0],None,[256],[0,256])
     plt.plot(hist, color='k')
     plt.xlim([0, 256])
-    plt.show()
 
 def countHistogram(gray):
     (unique, counts) = np.unique(gray, return_counts=True)
@@ -20,6 +20,13 @@ def removeBG(picture):
     morph = cv2.morphologyEx(gray, cv2.MORPH_DILATE, kernel)
     # divide gray by morphology image
     division = cv2.divide(gray, morph, scale=255)
+    resize('division', division)
+    resize('morph', morph)
+    resize('gray', gray)
+    histogram(gray)
+    histogram(morph)
+    histogram(division)
+    plt.show()
     # threshold
     return cv2.threshold(division, 0, 255, cv2.THRESH_OTSU +  cv2.THRESH_BINARY_INV )[1]
 
